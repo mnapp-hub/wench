@@ -1,0 +1,7 @@
+Flask==2.3.3
+Twilio==8.10.0
+Pillow==10.0.0
+pytesseract==0.3.10
+requests==2.31.0
+gunicorn==21.2.0
+piexif==1.1.3

@@ -17,21 +17,20 @@ def get_db_connection():
 
 
 def init_db():
-    """Initialize the database - only creates tables if database is empty"""
+    """Initialize the database - skip if file already exists and has data"""
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    
+    # If database file is larger than 5KB, it definitely has data - don't touch it
+    if os.path.exists(DB_PATH):
+        size = os.path.getsize(DB_PATH)
+        if size > 5000:
+            print(f"Database exists with {size} bytes - skipping init")
+            return
     
     with db_lock:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Check if amounts table exists and has data
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='amounts'")
-        if cursor.fetchone():
-            # Table exists, don't recreate
-            conn.close()
-            return
-        
-        # Table doesn't exist, create it
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS amounts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -5,7 +5,7 @@ from datetime import datetime
 from threading import Lock
 
 DB_PATH = '/app/data/totals.db'
-BACKUP_DIR = '/app/data'
+BACKUP_DIR = '/app/backups'
 db_lock = Lock()
 
 
@@ -17,13 +17,21 @@ def get_db_connection():
 
 
 def init_db():
-    """Initialize the database"""
+    """Initialize the database - only creates tables if database is empty"""
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     
     with db_lock:
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Check if amounts table exists and has data
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='amounts'")
+        if cursor.fetchone():
+            # Table exists, don't recreate
+            conn.close()
+            return
+        
+        # Table doesn't exist, create it
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS amounts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,6 +78,7 @@ def init_db():
 def create_backup():
     """Create a tar.gz backup of the database"""
     try:
+        os.makedirs(BACKUP_DIR, exist_ok=True)
         backup_file = os.path.join(BACKUP_DIR, 'app-data-backup.tar.gz')
         
         with tarfile.open(backup_file, 'w:gz') as tar:
